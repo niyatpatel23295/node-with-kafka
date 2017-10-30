@@ -2,9 +2,27 @@ var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
 var mongo = require("./mongo");
 var mongoURL = "mongodb://localhost:27017/demo3";
+var kafka = require('./kafka/client');
 
 module.exports = function(passport) {
-    passport.use('login', new LocalStrategy(function(username   , password, done) {
+    passport.use('login', new LocalStrategy(function(username , password, done) {
+            
+        kafka.make_request('login_topic',{"username":username,"password":password}, function(err,results){
+            if(err){
+                done(err,{});
+            }
+            else
+            {
+                console.log("Result in backend:passport js", JSON.stringify(results))
+                if(results){
+                    done(null,results);
+                }
+                else {
+                    done(null,false);
+                }
+            }
+        });
+/*    passport.use('login', new LocalStrategy(function(username   , password, done) {
         try {
             mongo.connect(mongoURL, function(){
                 console.log('Connected to mongo at: ' + mongoURL);
@@ -25,6 +43,6 @@ module.exports = function(passport) {
         }
         catch (e){
             done(e,{});
-        }
+        }*/
     }));
 };

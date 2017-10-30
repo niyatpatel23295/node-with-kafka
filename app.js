@@ -59,10 +59,12 @@ app.post('/logout', function(req,res) {
 app.post('/login', function(req, res) {
     passport.authenticate('login', function(err, user) {
         if(err) {
+            console.log(err);
             res.status(500).send();
         }
 
         if(!user) {
+
             res.status(401).send();
         }
         else{
@@ -78,6 +80,26 @@ app.post('/login', function(req, res) {
 
 app.post('/signup', function(req, res) {
     try {
+        var user_data = {
+            "username"  : req.body.username,
+            "password"  : req.body.password,
+            "email"     : req.body.email,
+            "firstname" : req.body.firstname,
+            "lastname"  : req.body.lastname
+        }
+        kafka.make_request('signup_topic',user_data, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+            }
+            else if(!results){
+                res.status(401).json({error: "User not found"});
+            }
+            else{
+                res.status(200).send({message: "Success"});
+            }
+
+        });
+
         mongo.connect('mongodb://localhost:27017/demo3', function(err, db){
             db.collection('creds').insertOne({
                 firstname: req.body.firstname,
