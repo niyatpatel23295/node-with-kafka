@@ -5,6 +5,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var cors = require('cors');
+var kafka = require('./routes/kafka/client');
 require('./routes/passport')(passport);
 
 var routes = require('./routes/index');
@@ -80,27 +81,28 @@ app.post('/login', function(req, res) {
 
 app.post('/signup', function(req, res) {
     try {
+        console.log(user_data);
         var user_data = {
             "username"  : req.body.username,
             "password"  : req.body.password,
             "email"     : req.body.email,
             "firstname" : req.body.firstname,
-            "lastname"  : req.body.lastname
+            "lastname"  : req.body.lastname,
+            "key"       : "signup_api"
         }
-        kafka.make_request('signup_topic',user_data, function(err,response_kafka){
+        kafka.make_request('login_topic',user_data, function(err,response_kafka){
             if(err){
                 console.trace(err);
-            }
-            else if(!results){
-                res.status(401).json({error: "User not found"});
+                res.status(401).json({error: err});
             }
             else{
-                res.status(200).send({message: "Success"});
+                console.log("Signup user response ", JSON.stringify(response_kafka));
+                res.status(200).send({message: "Success", data : response_kafka});
             }
 
         });
 
-        mongo.connect('mongodb://localhost:27017/demo3', function(err, db){
+/*        mongo.connect('mongodb://localhost:27017/demo3', function(err, db){
             db.collection('creds').insertOne({
                 firstname: req.body.firstname,
                 lastname: req.body.lastname,
@@ -117,10 +119,10 @@ app.post('/signup', function(req, res) {
                 console.log(e);
                 res.status(500).send({"error": "Username already exists"});
             });
-        });
+        });*/
     }
     catch (e){
-        console.log("Error here");        
+        console.log(e);        
         res.send(e);
     }
 });
